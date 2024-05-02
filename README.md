@@ -35,10 +35,29 @@ IAM_SERVER_CLIENT_SECRET=your-client-secret
 IAM_SERVER_URL=your-iam-server-url
 ```
 
+Ensure your `auth.php` file is configured with the appropriate guards and providers to use with this package:
+
+```php
+'guards' => [
+    'api' => [
+        'driver' => 'sanctum',
+        'provider' => 'remote_users',
+    ],
+],
+'providers' => [
+    'remote_users' => [
+        'driver' => 'remote',
+        'model' => App\Models\User::class, // or you model
+    ],
+],
+```
+
+These settings configure Laravel to use Sanctum with the remote user model, ensuring proper authentication handling through the IAM server.
+
 You can specify an alternative user model in the configuration file:
 
 ```php
-    'user_class' => App\Models\User::class
+    'user_class' => App\Models\User::class  // or your model
 ```
 
 ## Usage
