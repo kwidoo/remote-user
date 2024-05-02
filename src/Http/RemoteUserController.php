@@ -7,6 +7,11 @@ use Kwidoo\RemoteUser\Contracts\RemoteUser;
 
 class RemoteUserController extends Controller
 {
+    /**
+     * Get Sanctum access token for the remote user.
+     *
+     * @return array
+     */
     public function token()
     {
         return [

@@ -14,6 +14,11 @@ class RemoteUserProvider implements UserProvider
         //
     }
 
+    /**
+     * @param mixed $identifier
+     *
+     * @return RemoteUser|null
+     */
     public function retrieveById($identifier)
     {
         $data = $this->authService->retrieveFromApi($identifier);
@@ -25,21 +30,27 @@ class RemoteUserProvider implements UserProvider
         return null;
     }
 
+    /// For compatibility only
+
+    /** @SuppressWarnings(PHPMD) */
     public function retrieveByToken($identifier, $token)
     {
-        return $this->retrieveById($token);
+        return $this->retrieveById($identifier);
     }
 
+    /** @SuppressWarnings(PHPMD) */
     public function updateRememberToken(Authenticatable $user, $token)
     {
         // No operation
     }
 
+    /** @SuppressWarnings(PHPMD) */
     public function retrieveByCredentials(array $credentials)
     {
         // Implementation depends on requirements
     }
 
+    /** @SuppressWarnings(PHPMD) */
     public function validateCredentials(Authenticatable $user, array $credentials)
     {
         // Validation handled by IAM server
