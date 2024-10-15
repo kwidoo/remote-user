@@ -2,6 +2,7 @@
 
 namespace Kwidoo\RemoteUser\Models;
 
+use Illuminate\Support\Facades\Cache;
 use Kwidoo\RemoteUser\Contracts\AuthService;
 use Sushi\Sushi;
 
@@ -16,6 +17,10 @@ trait AsRemoteUser
      */
     public function getRows()
     {
-        return [app(AuthService::class)->retrieveFromApi()];
+        $token = md5(request()->bearerToken());
+        return
+            Cache::remember('remote-user-' . $token, now()->addMinutes(5), function () {
+                return [app(AuthService::class)->retrieveFromApi()];
+            });
     }
 }

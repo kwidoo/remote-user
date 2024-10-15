@@ -14,29 +14,6 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class RemoteAuthService implements AuthService
 {
     /**
-     * Get access token from remote Laravel Passport server. This will obtain client credentials grant.
-     *
-     * @return string
-     */
-    public function getAccessToken(): string
-    {
-        return Cache::remember('access_token', 3000, function () {
-            $response = Http::post(config('iam.oauth_url') . config('iam.oauth_endpoint'), [
-                'grant_type' => 'client_credentials',
-                'client_id' => config('iam.oauth_client_id'),
-                'client_secret' => config('iam.oauth_client_secret'),
-                'scope' => config('iam.oauth_scope', ['*']),
-            ]);
-
-            if ($response->successful()) {
-                return $response->json('access_token');
-            }
-
-            throw new RemoteAuthorizationException('Failed to retrieve access token');
-        });
-    }
-
-    /**
      * Retrieve user data from the remote service. Since this relies on an external service, the
      * $identifier is fetched from the frontend request header: config('iam.token_header', 'X-IAM-Token').
      * In the console or where the request header is not available, the $identifier can be passed as a parameter.
@@ -51,27 +28,23 @@ class RemoteAuthService implements AuthService
      */
     public function retrieveFromApi($identifier = null, $retry = null)
     {
-        $token = $this->getAccessToken();
         $iamToken = request()->header(config('iam.token_header'), $identifier);
-        if (!$token || !$iamToken) {
-            return abort(403);
+        if (!$iamToken) {
+            throw new RemoteAuthorizationException('Failed to retrieve user data');
         }
 
         // Fetch user data from IAM server using the opaque token
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
-            config('iam.token_header') => $iamToken,
-            'Accept' => 'application/json',
-        ])->get(config('iam.oauth_url') . config('iam.user_endpoint'));
+        return Cache::remember('remote-user-' . md5($iamToken), now()->addMinutes(5), function () use ($iamToken, $identifier) {
+            $response =  Http::withHeaders([
+                'Authorization' => 'Bearer ' . $iamToken,
+                'Accept' => 'application/json',
+            ])->get(config('iam.oauth_url') . config('iam.user_endpoint'));
 
-        if ($response->successful()) {
-            return $response->json();
-        }
-        if (!$retry) {
-            Cache::forget('access_token');
-            return $this->retrieveFromApi($identifier, true);
-        }
+            if ($response->successful()) {
+                return $response->json('data');
+            }
 
-        return [];
+            throw new RemoteAuthorizationException('Failed to retrieve user data');
+        });
     }
 }

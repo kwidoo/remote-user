@@ -6,6 +6,8 @@ use App\Models\User;
 use Illuminate\Support\ServiceProvider;
 use Kwidoo\RemoteUser\Contracts\AuthService;
 use Kwidoo\RemoteUser\Contracts\RemoteUser;
+use Kwidoo\RemoteUser\Models\PersonalAccessToken;
+use Laravel\Sanctum\Sanctum;
 
 class RemoteUserServiceProvider extends ServiceProvider
 {
@@ -26,8 +28,17 @@ class RemoteUserServiceProvider extends ServiceProvider
         $this->app->bind(RemoteUser::class, config('iam.user_class', User::class));
 
         $this->app['auth']->provider('remote', function ($app) {
-            return $app->make(RemoteUserProvider::class);
+            return $app->make(RemoteUserProvider::class, [
+                'authService' => $app->make(AuthService::class),
+            ]);
         });
+
+        Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
+        Sanctum::authenticateAccessTokensUsing(
+            static function (PersonalAccessToken $accessToken, bool $is_valid) {
+                return true;
+            }
+        );
     }
 
     /**
