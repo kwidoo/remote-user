@@ -20,7 +20,8 @@ trait AsRemoteUser
         $token = md5(request()->bearerToken());
         return
             Cache::remember('remote-user-' . $token, now()->addMinutes(5), function () {
-                return [app(AuthService::class)->retrieveFromApi()];
+                $response = app(AuthService::class)->retrieveFromApi();
+                return !empty($response) ? [$response] : [];
             });
     }
 }

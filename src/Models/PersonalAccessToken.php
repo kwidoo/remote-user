@@ -5,6 +5,7 @@ namespace Kwidoo\RemoteUser\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Facades\Cache;
 use Sushi\Sushi;
 
 class PersonalAccessToken extends Model
@@ -29,9 +30,14 @@ class PersonalAccessToken extends Model
      */
     public function getRows()
     {
+        $user = config('iam.user_class')::first();
+        if (!$user) {
+            Cache::forget('remote-user-' . md5(request()->bearerToken()));
+            return [];
+        }
         return [[
             'tokenable_type' => config('iam.user_class'),
-            'tokenable_id' => config('iam.user_class')::first()->id,
+            'tokenable_id' => $user->id,
             'name' => 'CustomToken',
             'abilities' => '',
             'created_at' => now()->subMinute(),
