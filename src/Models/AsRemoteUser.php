@@ -17,11 +17,7 @@ trait AsRemoteUser
      */
     public function getRows()
     {
-        $token = md5(request()->bearerToken());
-        return
-            Cache::remember('remote-user-' . $token, now()->addMinutes(5), function () {
-                $response = app(AuthService::class)->retrieveFromApi();
-                return !empty($response) ? [$response] : [];
-            });
+        $response = app(AuthService::class)->retrieveFromApi();
+        return !empty($response) ? [$response] : [];
     }
 }
